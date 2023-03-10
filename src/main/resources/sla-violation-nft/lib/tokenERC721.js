@@ -25,7 +25,7 @@ class Status {
     }
 
     isStatusValid() {
-        return this.value == Status.OPEN.value || this.value == Status.SOLVED.value || this.value == Status.REJECTED.value || this.value == Status.IN_PROGRESS.value;
+        return this.value === Status.OPEN.value || this.value == Status.SOLVED.value || this.value == Status.REJECTED.value || this.value == Status.IN_PROGRESS.value;
     }
 }
 
@@ -71,10 +71,13 @@ class TokenERC721Contract extends Contract {
         // Count the number of returned composite keys
         let result = await iterator.next();
         while (!result.done) {
-            resultFull.push(result);
+            const nftBytes = await ctx.stub.getState(result.value);
+            const nft = JSON.parse(nftBytes.toString());
+            resultFull.push(nft);
             result = await iterator.next();
+            return [result,nft];
+
         }
-        return resultFull;
 
     }
 
@@ -109,8 +112,7 @@ class TokenERC721Contract extends Contract {
             throw new Error('No owner is assigned to this token');
         }
 
-        const statusValid = new Status(status)
-        if (!statusValid.isStatusValid()) {
+        if (!this.isStatusValid()) {
             throw new Error(`The status ${status} is invalid. status must be a string`);
         }
 
@@ -221,7 +223,7 @@ class TokenERC721Contract extends Contract {
 
     /**
      * SetApprovalForAll enables or disables approval for a third party ("operator")
-     * to manage all of message sender's assets
+     * to manage all message sender's assets
      *
      * @param {Context} ctx the transaction context
      * @param {String} operator A client to add to the set of authorized operators
@@ -371,6 +373,10 @@ class TokenERC721Contract extends Contract {
         return true;
     }
 
+
+    isStatusValid(value) {
+        return value == "OPEN" || value == "SOLVED" || value == "REJECTED" || value == "IN_PROGRESS";
+    }
     /**
      * Mint a new non-fungible token
      *
@@ -408,8 +414,9 @@ class TokenERC721Contract extends Contract {
             throw new Error(`The temperature ${temperature} is invalid. temperature must be a double`);
         }
 
-        const statusValid = new Status(status)
-        if (!status.isStatusValid()) {
+
+
+        if (!this.isStatusValid(status)) {
             throw new Error(`The status ${status} is invalid. status must be a string`);
         }
 
@@ -422,7 +429,7 @@ class TokenERC721Contract extends Contract {
             tokenId: tokenIdInt,
             owner: minter,
             temperature: temperatureDouble,
-            status: statusValid,
+            status: status,
             timestamp: timestampInt
         };
 
